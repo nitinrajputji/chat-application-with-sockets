@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" type="text/css" href="./style.css" />
+  </head>
+  <body>
+    <nav>
+      <img class="logo" src="./logo.png" alt="" />
+    </nav>
+    <div class="container"></div>
+
+    <div class="send">
+      <form action="#" id="send-container">
+        <input type="text" name="messageInp" id="messageInp" />
+        <button type="submit" class="btn">send</button>
+      </form>
+    </div>
+  </body>
+  <script>
+    const socket = io();
+    const form = document.getElementById("send-container");
+    const msgInp = document.getElementById("messageInp");
+    const messageContainer = document.querySelector(".container");
+    var audio = new Audio("./message.mp3");
+
+    const append = (message, position) => {
+      const messageElement = document.createElement("div");
+      messageElement.innerText = message;
+      messageElement.classList.add("message");
+      messageElement.classList.add(position);
+      messageContainer.append(messageElement);
+      if (position == "left") {
+        audio.play();
+        function setUserStatusGreen() {
+            messageElement.classList.remove("status-red");
+            messageElement.classList.add("status-green");
+        }
+
+        let userActivityTimeout;
+
+        function setUserStatusGreen() {
+            messageElement.classList.remove("status-red");
+            messageElement.classList.add("status-green");
+        }
+
+        function setUserStatusRed() {
+            messageElement.classList.remove("status-green");
+            messageElement.classList.add("status-red");
+        }
+
+        function resetUserActivityTimer() {
+          clearTimeout(userActivityTimeout);
+          userActivityTimeout = setTimeout(setUserStatusRed, 5000);
+          setUserStatusGreen();
+        }
+
+        window.addEventListener("mousemove", resetUserActivityTimer);
+        window.addEventListener("keydown", resetUserActivityTimer);
+      }
+    };
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const message = msgInp.value;
+      append(`You : ${message}`, "right");
+      socket.emit("send", message);
+      msgInp.value = "";
+    });
+
+    const name = prompt("Enter your name to join");
+    socket.emit("new-user-joined", name);
+    socket.on("user-joined", (data) => {
+      console.log(data);
+      append(`${data} joined the chat`, "center");
+    });
+
+    socket.on("receive", (data) => {
+      append(`${data.name} : ${data.message}`, "left");
+    });
+
+    socket.on("leave", (name) => {
+      append(`${name} left the chat`, "center");
+    });
+  </script>
+</html>
